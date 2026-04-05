@@ -43,10 +43,12 @@ def load_model_from_checkpoint(ckpt_path: Path, cfg: dict, device: torch.device)
             num_classes=mcfg["num_classes"],
             pretrained_backbone=bool(mcfg.get("pretrained_backbone", False)),
         )
+        core.load_state_dict(blob["model"], strict=True)
         model = DeepLabOnnxWrapper(core)
     else:
         raise ValueError(model_name)
-    model.load_state_dict(blob["model"], strict=True)
+    if model_name != "deeplabv3":
+        model.load_state_dict(blob["model"], strict=True)
     model.eval()
     return model, model_name
 

@@ -1,0 +1,34 @@
+model:
+  name: unet
+  in_channels: 3
+  num_classes: 5
+  base_channels: 16
+
+data:
+  num_samples: 256
+  image_size: [128, 128]
+  val_fraction: 0.125
+  seed: 7
+
+training:
+  epochs: 1
+  batch_size: 8
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  num_workers: 0
+  loss: combined
+  ce_weight: 0.5
+  dice_weight: 0.5
+  checkpoint_dir: models/checkpoints
+  log_interval: 10
+
+augmentation:
+  hflip_prob: 0.5
+  vflip_prob: 0.0
+  brightness: 0.1
+  contrast: 0.1
+
+export:
+  onnx_path: models/onnx/unet_scene_seg.onnx
+  opset: 12
+  input_size: [1, 3, 128, 128]

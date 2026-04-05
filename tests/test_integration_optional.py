@@ -10,6 +10,7 @@ _REPO = Path(__file__).resolve().parents[1]
     reason="Full ONNX artifact not present; train+export first.",
 )
 def test_project_onnx_runs():
+    pytest.importorskip("onnxruntime")
     import onnxruntime as ort
 
     p = _REPO / "models" / "onnx" / "unet_scene_seg.onnx"

@@ -1,5 +1,4 @@
 import numpy as np
-import onnxruntime as ort
 import pytest
 import torch
 
@@ -7,6 +6,9 @@ from src.python.training.unet_model import UNet
 
 
 def test_unet_onnx_roundtrip(tmp_path):
+    pytest.importorskip("onnxruntime")
+    import onnxruntime as ort
+
     torch.manual_seed(0)
     model = UNet(in_channels=3, num_classes=4, base=16)
     model.eval()

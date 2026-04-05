@@ -57,6 +57,7 @@ flowchart LR
   - **TensorRT INT8** on Jetson (recommended for production): build an engine with a calibration cache generated from representative frames (CSI camera or recorded rosbag/video).
 - **`--simulate-only`** emits a **JSON footprint report** (approximate size reduction ~30–35%) when you want planning numbers without a full quant toolchain (`benchmarks/int8_simulation_report.json`).
 - The C++ flag `use_int8_simulation` **does not change math**; it logs that the FP32 ONNX path is standing in for a TensorRT INT8 engine.
+- **TensorRT automation (Jetson / dGPU)**: `scripts/jetson/trtexec_fp16.sh` builds an FP16 engine; `scripts/jetson/trtexec_int8.sh` expects a calibration cache (see below). `scripts/jetson/polygraphy_int8_example.sh` is a Polygraphy template. **Calibration frames**: `python src/python/export/prepare_trt_calibration_images.py` writes PNGs under `data/calibration/frames/` for your calibrator / Polygraphy data loader.
 
 ---
 
@@ -100,7 +101,9 @@ cmake --build build -j
 
 Requires **OpenCV** with **dnn**, **imgproc**, **videoio**, **highgui**. On Ubuntu/Jetson: `libopencv-dev`. The build fetches **nlohmann/json** via CMake `FetchContent`.
 
-**Windows**: install OpenCV and set `OpenCV_DIR` to the directory containing `OpenCVConfig.cmake`, then run CMake.
+**Windows**: install OpenCV and set `OpenCV_DIR` to the directory containing `OpenCVConfig.cmake`, then run CMake (or use **`CMakePresets.json`**: preset `windows-opencv` reads `%OpenCV_DIR%`).
+
+**CI / reproducible C++ verification**: GitHub Actions (`.github/workflows/ci.yml`) runs **pytest**, **`scripts/ci_prepare_models.py`** (checkpoint + ONNX + ONNX reference parity), **`validate_onnx.py --backend reference`**, **CMake build**, and a **headless** `./build/seg_edge_pipeline configs/pipeline_ci.json` run.
 
 ---
 
@@ -123,10 +126,24 @@ python src/python/training/train.py --config configs/smoke_train.yaml
 
 ```bash
 python src/python/export/export_onnx.py --config configs/train_unet.yaml --checkpoint models/checkpoints/unet_best.pt
-python src/python/export/validate_onnx.py   --config configs/train_unet.yaml --checkpoint models/checkpoints/unet_best.pt --onnx models/onnx/unet_scene_seg.onnx
+# Default: try ONNXRuntime, else fall back to pure ONNX reference (helps on broken Windows ORT DLLs):
+python src/python/export/validate_onnx.py --config configs/train_unet.yaml --checkpoint models/checkpoints/unet_best.pt --onnx models/onnx/unet_scene_seg.onnx --backend auto
+# Force no ORT (CI / laptops without working onnxruntime):
+python src/python/export/validate_onnx.py --config configs/ci_export.yaml --checkpoint models/checkpoints/ci_unet.pt --onnx models/onnx/ci_unet.onnx --backend reference
 ```
 
-`validate_onnx.py` compares PyTorch vs **ONNXRuntime** outputs (requires a working `onnxruntime` install).
+`validate_onnx.py` compares PyTorch vs **ONNXRuntime** (`--backend ort` / `auto`) or **`onnx.reference.ReferenceEvaluator`** (`--backend reference`), which does not require the `onnxruntime` native DLL.
+
+**Local one-shot CI assets** (optional): `python scripts/ci_prepare_models.py` regenerates `models/checkpoints/ci_unet.pt` and `models/onnx/ci_unet.onnx` and checks reference parity.
+
+### TensorRT engines (device)
+
+```bash
+chmod +x scripts/jetson/trtexec_fp16.sh scripts/jetson/trtexec_int8.sh
+./scripts/jetson/trtexec_fp16.sh models/onnx/unet_scene_seg.onnx models/engines/unet_fp16.engine
+# INT8: supply calibration cache path; see script header.
+./scripts/jetson/trtexec_int8.sh models/onnx/unet_scene_seg.onnx models/engines/unet_int8.engine data/calibration/calib_cache.bin
+```
 
 ### INT8 (ORT or simulated)
 

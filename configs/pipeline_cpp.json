@@ -1,0 +1,16 @@
+{
+  "model_path": "models/onnx/unet_scene_seg.onnx",
+  "input_width": 256,
+  "input_height": 256,
+  "num_classes": 5,
+  "use_int8_simulation": false,
+  "prefer_cuda": true,
+  "camera_index": 0,
+  "use_video_file": false,
+  "video_path": "data/sample_video.mp4",
+  "morph_kernel_size": 5,
+  "morph_iterations": 1,
+  "min_contour_area": 80,
+  "log_file": "benchmarks/runtime_cpp.log",
+  "memory_profile_interval_ms": 500
+}

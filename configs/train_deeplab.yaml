@@ -1,0 +1,34 @@
+model:
+  name: deeplabv3
+  backbone: resnet50  # torchvision segmentation head
+  num_classes: 5
+  pretrained_backbone: false
+
+data:
+  num_samples: 10000
+  image_size: [256, 256]
+  val_fraction: 0.1
+  seed: 42
+
+training:
+  epochs: 6
+  batch_size: 4
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  num_workers: 2
+  loss: combined
+  ce_weight: 0.5
+  dice_weight: 0.5
+  checkpoint_dir: models/checkpoints
+  log_interval: 50
+
+augmentation:
+  hflip_prob: 0.5
+  vflip_prob: 0.2
+  brightness: 0.12
+  contrast: 0.12
+
+export:
+  onnx_path: models/onnx/deeplabv3_scene_seg.onnx
+  opset: 12
+  input_size: [1, 3, 256, 256]

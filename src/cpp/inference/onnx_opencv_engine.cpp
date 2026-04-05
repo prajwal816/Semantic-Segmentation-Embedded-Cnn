@@ -9,7 +9,7 @@ OnnxOpenCVEngine::OnnxOpenCVEngine(InferenceConfig cfg) : cfg_(std::move(cfg)) {
   if (net_.empty()) {
     throw std::runtime_error("Failed to load ONNX model: " + cfg_.model_path);
   }
-  if (cfg_.prefer_cuda && cv::cuda::getCudaEnabledDeviceCount() > 0) {
+  if (cfg_.prefer_cuda) {
     net_.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
     net_.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA);
   } else {

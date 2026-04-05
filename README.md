@@ -234,7 +234,7 @@ pytest tests/
 
 ## Docker
 
-- **x86_64 CUDA dev**: `docker build -t seg-edge:dev .`
+- **x86_64 CUDA dev**: `docker build -t seg-edge:dev .` — the image runs **`scripts/ci_prepare_models.py`**, builds **`seg_edge_pipeline`**, and executes a **headless** pipeline smoke (`configs/pipeline_ci.json`).
 - **Jetson-oriented sample**: `docker build -f docker/jetson-l4t.Dockerfile -t seg-edge:l4t .` (pin the L4T base tag to your BSP).
 
 ---

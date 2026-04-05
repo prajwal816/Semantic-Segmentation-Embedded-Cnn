@@ -28,32 +28,16 @@ jobs:
       - name: Pytest
         run: python3 -m pytest tests/ -q
 
-      - name: Export tiny ONNX for C++ integration
+      - name: Prepare CI checkpoint + ONNX + reference parity
+        run: python3 scripts/ci_prepare_models.py
+
+      - name: Validate ONNX (reference backend)
         run: |
-          python3 << 'PY'
-          import sys
-          from pathlib import Path
-          import torch
-
-          sys.path.insert(0, str(Path.cwd()))
-          from src.python.training.unet_model import UNet
-
-          Path("models/onnx").mkdir(parents=True, exist_ok=True)
-          m = UNet(in_channels=3, num_classes=5, base=16)
-          m.eval()
-          x = torch.randn(1, 3, 128, 128)
-          out = "models/onnx/ci_unet.onnx"
-          torch.onnx.export(
-              m,
-              x,
-              out,
-              input_names=["input"],
-              output_names=["logits"],
-              opset_version=12,
-              do_constant_folding=True,
-          )
-          print("Wrote", out)
-          PY
+          python3 src/python/export/validate_onnx.py \
+            --config configs/ci_export.yaml \
+            --checkpoint models/checkpoints/ci_unet.pt \
+            --onnx models/onnx/ci_unet.onnx \
+            --backend reference
 
       - name: Configure & build C++
         run: |
@@ -62,12 +46,3 @@ jobs:
 
       - name: Headless edge pipeline (integration)
         run: ./build/seg_edge_pipeline configs/pipeline_ci.json
-
-      - name: ONNX validate (reference backend, no ORT required)
-        run: |
-          python3 src/python/export/validate_onnx.py \
-            --config configs/smoke_train.yaml \
-            --checkpoint models/checkpoints/unet_best.pt \
-            --onnx models/onnx/ci_unet.onnx \
-            --backend reference || true
-        continue-on-error: true

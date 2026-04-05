@@ -11,7 +11,6 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-import torch
 
 _REPO = Path(__file__).resolve().parents[3]
 if str(_REPO) not in sys.path:

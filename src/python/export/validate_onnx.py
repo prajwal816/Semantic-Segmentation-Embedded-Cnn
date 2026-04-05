@@ -16,19 +16,38 @@ from src.python.export.export_onnx import load_model_from_checkpoint  # noqa: E4
 from src.python.utils.config import load_yaml, resolve_path, set_seed  # noqa: E402
 
 
-def main() -> None:
-    try:
-        import onnxruntime as ort
-    except Exception as exc:  # noqa: BLE001
-        raise SystemExit(f"ONNXRuntime import failed ({exc}). Install onnxruntime or use a Jetson/Linux env.") from exc
+def _run_reference(onnx_model: onnx.ModelProto, feed: dict[str, np.ndarray]) -> np.ndarray:
+    from onnx.reference import ReferenceEvaluator
 
-    parser = argparse.ArgumentParser(description="Compare PyTorch vs ONNXRuntime outputs.")
+    sess = ReferenceEvaluator(onnx_model)
+    outs = sess.run(None, feed)
+    return outs[0]
+
+
+def _run_ort(onnx_path: Path, feed: dict[str, np.ndarray]) -> np.ndarray:
+    import onnxruntime as ort
+
+    sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
+    return sess.run(None, feed)[0]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Compare PyTorch vs ONNXRuntime or ONNX reference interpreter outputs."
+    )
     parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--onnx", type=str, required=True)
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--rtol", type=float, default=1e-3)
     parser.add_argument("--atol", type=float, default=1e-3)
+    parser.add_argument(
+        "--backend",
+        type=str,
+        choices=("auto", "ort", "reference"),
+        default="auto",
+        help="auto: try ORT, fall back to onnx.reference (no DLL) on failure.",
+    )
     args = parser.parse_args()
 
     cfg = load_yaml(resolve_path(args.config))
@@ -50,13 +69,26 @@ def main() -> None:
     with torch.no_grad():
         torch_out = torch_model(x).cpu().numpy()
 
-    sess = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
-    ort_out = sess.run(None, {"input": x.cpu().numpy()})[0]
+    feed = {"input": x.cpu().numpy()}
+    backend_used = args.backend
 
-    ok = np.allclose(torch_out, ort_out, rtol=args.rtol, atol=args.atol)
-    max_abs = float(np.max(np.abs(torch_out - ort_out)))
-    mean_abs = float(np.mean(np.abs(torch_out - ort_out)))
-    print(f"max_abs_diff={max_abs:.6e} mean_abs_diff={mean_abs:.6e} match={ok}")
+    if args.backend == "reference":
+        onnx_out = _run_reference(onnx_model, feed)
+    elif args.backend == "ort":
+        onnx_out = _run_ort(onnx_path, feed)
+    else:
+        try:
+            onnx_out = _run_ort(onnx_path, feed)
+            backend_used = "ort"
+        except Exception as exc:  # noqa: BLE001
+            print(f"[auto] ONNXRuntime unavailable ({exc}); using onnx.reference.")
+            onnx_out = _run_reference(onnx_model, feed)
+            backend_used = "reference"
+
+    ok = np.allclose(torch_out, onnx_out, rtol=args.rtol, atol=args.atol)
+    max_abs = float(np.max(np.abs(torch_out - onnx_out)))
+    mean_abs = float(np.mean(np.abs(torch_out - onnx_out)))
+    print(f"backend={backend_used} max_abs_diff={max_abs:.6e} mean_abs_diff={mean_abs:.6e} match={ok}")
     if not ok:
         raise SystemExit(1)
 

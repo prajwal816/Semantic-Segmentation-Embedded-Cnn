@@ -128,15 +128,16 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto pct = [](std::vector<double>& v, double p) {
+  auto median_ms = [](std::vector<double> v) {
     if (v.empty()) {
       return 0.0;
     }
-    std::nth_element(v.begin(), v.begin() + v.size() / 2, v.end());
-    return v[v.size() / 2];
+    const auto mid = v.size() / 2;
+    std::nth_element(v.begin(), v.begin() + static_cast<std::vector<double>::difference_type>(mid), v.end());
+    return v[mid];
   };
-  log.info(std::string("latency_p50_ms preprocess=") + std::to_string(pct(t_pre)) +
-           " infer=" + std::to_string(pct(t_inf)) + " post=" + std::to_string(pct(t_post)));
+  log.info(std::string("latency_p50_ms preprocess=") + std::to_string(median_ms(t_pre)) +
+           " infer=" + std::to_string(median_ms(t_inf)) + " post=" + std::to_string(median_ms(t_post)));
 
   return 0;
 }

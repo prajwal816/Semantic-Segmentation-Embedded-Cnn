@@ -6,7 +6,6 @@ from pathlib import Path
 
 import numpy as np
 import onnx
-import onnxruntime as ort
 import torch
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -18,6 +17,11 @@ from src.python.utils.config import load_yaml, resolve_path, set_seed  # noqa: E
 
 
 def main() -> None:
+    try:
+        import onnxruntime as ort
+    except Exception as exc:  # noqa: BLE001
+        raise SystemExit(f"ONNXRuntime import failed ({exc}). Install onnxruntime or use a Jetson/Linux env.") from exc
+
     parser = argparse.ArgumentParser(description="Compare PyTorch vs ONNXRuntime outputs.")
     parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--checkpoint", type=str, required=True)

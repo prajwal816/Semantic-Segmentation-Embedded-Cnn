@@ -12,7 +12,6 @@ import time
 from pathlib import Path
 
 import numpy as np
-import onnxruntime as ort
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
@@ -22,6 +21,12 @@ from src.python.utils.config import resolve_path  # noqa: E402
 
 
 def main() -> None:
+    try:
+        import onnxruntime as ort
+    except Exception as exc:  # noqa: BLE001
+        print(f"ONNXRuntime required for this benchmark ({exc}).")
+        sys.exit(2)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--onnx", type=str, default="models/onnx/unet_scene_seg.onnx")
     parser.add_argument("--frames", type=int, default=120)

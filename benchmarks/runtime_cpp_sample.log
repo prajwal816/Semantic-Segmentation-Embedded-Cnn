@@ -1,0 +1,4 @@
+2026-04-05 12:00:01 [INFO] Loading ONNX: models/onnx/unet_scene_seg.onnx
+2026-04-05 12:00:02 [INFO] rss_kb=742000 est_fps=18.4321 gpu: run `tegrastats` on Jetson or `nvidia-smi` on dGPU hosts
+2026-04-05 12:00:03 [INFO] rss_kb=748200 est_fps=19.0110 gpu: run `tegrastats` on Jetson or `nvidia-smi` on dGPU hosts
+2026-04-05 12:00:04 [INFO] latency_p50_ms preprocess=1.12 infer=48.30 post=2.85

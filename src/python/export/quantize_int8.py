@@ -40,8 +40,12 @@ def _simulate_report(onnx_path: Path, out_json: Path) -> None:
 
 
 def _ort_quantize(onnx_in: Path, onnx_out: Path, num_calib: int, input_shape: List[int]) -> None:
-    from onnxruntime.quantization import CalibrationDataReader, quantize_static, QuantType
-    import onnxruntime as ort
+    try:
+        from onnxruntime.quantization import CalibrationDataReader, QuantType, quantize_static
+        import onnxruntime as ort
+    except Exception as exc:  # noqa: BLE001
+        print(f"ONNXRuntime quantization unavailable ({exc}). Use --simulate-only or fix the ORT install.")
+        raise SystemExit(3) from exc
 
     class RandomReader(CalibrationDataReader):
         def __init__(self) -> None:
@@ -55,18 +59,21 @@ def _ort_quantize(onnx_in: Path, onnx_out: Path, num_calib: int, input_shape: Li
             return {"input": np.random.randn(*input_shape).astype(np.float32)}
 
     ensure_dir(onnx_out.parent)
-    quantize_static(
-        model_input=str(onnx_in),
-        model_output=str(onnx_out),
-        calibration_data_reader=RandomReader(),
-        quant_format=QuantType.QUInt8,
-        activation_type=QuantType.QUInt8,
-        weight_type=QuantType.QInt8,
-        per_channel=True,
-        reduce_range=False,
-    )
+    try:
+        quantize_static(
+            model_input=str(onnx_in),
+            model_output=str(onnx_out),
+            calibration_data_reader=RandomReader(),
+            quant_format=QuantType.QUInt8,
+            activation_type=QuantType.QUInt8,
+            weight_type=QuantType.QInt8,
+            per_channel=True,
+            reduce_range=False,
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"quantize_static failed ({exc}). Try a newer onnxruntime or use TensorRT on Jetson.")
+        raise SystemExit(4) from exc
     print(f"Quantized ONNX -> {onnx_out}")
-    # sanity run
     sess = ort.InferenceSession(str(onnx_out), providers=["CPUExecutionProvider"])
     out = sess.run(None, {"input": np.random.randn(*input_shape).astype(np.float32)})[0]
     print(f"sanity_output_shape={out.shape}")

@@ -1,0 +1,33 @@
+# Minimal config for CI: ONNX export + validate reference backend (128² U-Net).
+model:
+  name: unet
+  in_channels: 3
+  num_classes: 5
+  base_channels: 16
+
+data:
+  num_samples: 32
+  image_size: [128, 128]
+  val_fraction: 0.2
+  seed: 0
+
+training:
+  epochs: 1
+  batch_size: 4
+  learning_rate: 0.001
+  weight_decay: 0.0
+  num_workers: 0
+  loss: ce
+  checkpoint_dir: models/checkpoints
+  log_interval: 10
+
+augmentation:
+  hflip_prob: 0.0
+  vflip_prob: 0.0
+  brightness: 0.0
+  contrast: 0.0
+
+export:
+  onnx_path: models/onnx/ci_unet.onnx
+  opset: 12
+  input_size: [1, 3, 128, 128]

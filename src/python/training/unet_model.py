@@ -69,7 +69,7 @@ class UNet(nn.Module):
     def _concat_crop(up: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         _, _, hu, wu = up.shape
         _, _, hs, ws = skip.shape
-        dh, dw = hs - hu, ws - wu
-        if dh > 0 or dw > 0:
-            skip = skip[:, :, dh // 2 : dh // 2 + hu, dw // 2 : dw // 2 + wu]
+        y0 = max(0, (hs - hu) // 2)
+        x0 = max(0, (ws - wu) // 2)
+        skip = skip[:, :, y0 : y0 + hu, x0 : x0 + wu]
         return torch.cat([up, skip], dim=1)

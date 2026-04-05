@@ -6,4 +6,4 @@ param(
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent
 Set-Location $root
 python src/python/export/export_onnx.py --config $Config --checkpoint $Checkpoint
-python src/python/export/validate_onnx.py --config $Config --checkpoint $Checkpoint --onnx $Onnx
+python src/python/export/validate_onnx.py --config $Config --checkpoint $Checkpoint --onnx $Onnx --backend auto

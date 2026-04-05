@@ -211,10 +211,12 @@ Runtime logs append to `benchmarks/runtime_cpp.log` (path configurable).
 ## 11. Future Improvements
 
 - Replace synthetic data with **real multi-class** datasets (Cityscapes-style or custom ROS bags) and class rebalancing.
-- Add **TensorRT engine** build scripts and **Polygraphy** parity checks next to ONNXRuntime validation.
+- Flesh out **Polygraphy** INT8 conversion (`scripts/jetson/polygraphy_int8_example.sh`) with a project-specific data-loader script wired to `data/calibration/frames/`.
 - Integrate **GStreamer** zero-copy capture on Jetson and optional **ROS 2** node wrapping the C++ engine.
 - Per-class **morphology** and **temporal smoothing** across frames for video stability.
-- Harden **ONNXRuntime** tests on Windows hosts (known DLL issues on some setups — validation is optional in CI).
+- Load **TensorRT engines** directly in C++ (TensorRT runtime) alongside the current OpenCV DNN ONNX path.
+
+**Windows ORT troubleshooting**: run `scripts/verify_onnxruntime.ps1`; reinstall `onnxruntime` and the **VC++ Redistributable (x64)** if imports fail. Use `validate_onnx.py --backend reference` when ORT is unavailable.
 
 ---
 
@@ -231,6 +233,8 @@ models/  configs/  scripts/  benchmarks/  data/  docs/  tests/  docker/
 ```bash
 pytest tests/
 ```
+
+The ONNX export unit test runs **`torch.onnx.export` in a subprocess** so a broken host `onnxruntime` DLL does not abort the whole pytest session (PyTorch may probe ORT when `torch.onnx` is imported in-process).
 
 ## Docker
 

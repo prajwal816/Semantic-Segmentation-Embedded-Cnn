@@ -1,0 +1,7 @@
+{
+  "mode": "simulated_int8",
+  "source_onnx_mb": 7.414,
+  "estimated_int8_onnx_mb": 4.597,
+  "estimated_memory_reduction_pct": 35,
+  "notes": "Values are representative for Jetson TensorRT INT8 engines; run ORT quantize or trtexec for hardware truth."
+}

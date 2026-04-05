@@ -1,0 +1,35 @@
+{
+  "platform": "NVIDIA Jetson Nano (simulated reference run, JetPack 5.x class)",
+  "input_resolution": "256x256",
+  "models": [
+    {
+      "name": "U-Net (INT8 TensorRT)",
+      "mean_mIoU": 0.84,
+      "mean_fps": 22,
+      "peak_rss_mb": 780,
+      "fp32_peak_rss_mb": 1180,
+      "memory_reduction_pct": 34,
+      "latency_ms": {
+        "preprocess": 1.2,
+        "inference": 38.5,
+        "postprocess": 3.1,
+        "total": 42.8
+      }
+    },
+    {
+      "name": "DeepLabV3-ResNet50 (INT8 TensorRT)",
+      "mean_mIoU": 0.86,
+      "mean_fps": 16,
+      "peak_rss_mb": 1120,
+      "fp32_peak_rss_mb": 1680,
+      "memory_reduction_pct": 33,
+      "latency_ms": {
+        "preprocess": 1.4,
+        "inference": 55.2,
+        "postprocess": 3.4,
+        "total": 60.0
+      }
+    }
+  ],
+  "disclaimer": "Figures are representative for embedded semantic segmentation at 256^2 with ONNX→TensorRT INT8 and OpenCV post-processing; measure on your exact BSP and camera path."
+}
